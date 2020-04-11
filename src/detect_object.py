@@ -42,7 +42,7 @@ def main(argv):
     pred        = model.predict(img_feature)
 
     # LOAD CLASS WORD2VECS
-    class_vectors       = sorted(np.load(WORD2VECPATH), key=lambda x: x[0])
+    class_vectors       = sorted(np.load(WORD2VECPATH, allow_pickle=True), key=lambda x: x[0])
     classnames, vectors = zip(*class_vectors)
     classnames          = list(classnames)
     vectors             = np.asarray(vectors, dtype=np.float)
