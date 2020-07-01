@@ -2,10 +2,11 @@ from pymongo import MongoClient
 import random
 import os
 
-LABEL_FILE = 'awa_classes.txt'
+LABEL_FILE = '../../data/awa_classes.txt'
 client = MongoClient()
 db = client['zsl_database']
 collection = db['awa']
+label_collection = db['class_vectors']
 
 labels = [None]
 line_no = 1
@@ -24,5 +25,10 @@ for data_point in data:
         update['feature'] = feature_vector
     if 'label_name' not in data_point:
         update['label_name'] = labels[data_point['label']]
+    if 'label_embedding' not in data_point:
+        label_data = label_collection.find(
+            {'label': labels[data_point['label']]}).next()
+        class_vector = label_data['vector']
+        update['label_embedding'] = class_vector
     if update:
         collection.update({'_id': _id}, {'$set': update})
