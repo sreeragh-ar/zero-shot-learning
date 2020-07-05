@@ -1,5 +1,10 @@
-car
-food
-hand
-man
-neck
+sheep
+dolphin
+bat
+seal
+blue+whale
+rat
+horse
+walrus
+giraffe
+bobcat

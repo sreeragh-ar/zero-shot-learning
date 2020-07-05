@@ -10,6 +10,7 @@ np.random.seed(123)
 import gzip
 import _pickle as cPickle
 import os
+import json
 from collections import Counter
 
 from sklearn.preprocessing import LabelEncoder, normalize
@@ -48,6 +49,36 @@ def save_keras_model(model, model_path):
     model.save_weights(model_path + "model.h5")
     print("-> zsl model is saved.")
     return
+
+def load_custom_data(dataset='awa'):
+    train_data = None
+    valid_data = None
+    zero_shot_data = None
+    if dataset == 'awa':
+        with open('../data/awa_train_data.json') as json_file:
+            train_data = json.load(json_file)
+        with open('../data/awa_validation_data.json') as json_file:
+            valid_data = json.load(json_file)
+        with open('../data/awa_zsl_data.json') as json_file:
+            zero_shot_data = json.load(json_file)
+
+    np.random.shuffle(train_data)
+    np.random.shuffle(valid_data)
+
+    x_train, y_train    = zip(*train_data)
+    y_train = np.squeeze(np.asarray(y_train))
+    x_train = normalize(x_train, norm='l2')
+
+    x_valid, y_valid = zip(*valid_data)
+    y_valid = np.squeeze(np.asarray(y_valid))
+    x_valid = normalize(x_valid, norm='l2')
+
+    x_zsl, y_zsl = zip(*zero_shot_data)
+    x_zsl = normalize(x_zsl, norm='l2')
+
+    print("-> data loading is completed.")
+    return (x_train, x_valid, x_zsl), (y_train, y_valid, y_zsl)
+
 
 def load_data():
     """read data, create datasets"""
@@ -108,6 +139,16 @@ def load_data():
     return (x_train, x_valid, x_zsl), (y_train, y_valid, y_zsl)
 
 
+def awa_kernel_init(shape):
+    class_vectors = None
+    with open('../data/vectors_data.json') as json_file:
+            class_vectors = json.load(json_file)
+    training_vectors    = sorted([(vector_data['label'], vector_data['vector']) for vector_data in class_vectors if vector_data['label'] in train_classes], key=lambda x: x[0])
+    classnames, vectors = zip(*training_vectors)
+    vectors             = np.asarray(vectors, dtype=np.float)
+    vectors             = vectors.T
+    return vectors
+
 def custom_kernel_init(shape):
     class_vectors       = np.load(WORD2VECPATH,allow_pickle=True)
     training_vectors    = sorted([(label, vec) for (label, vec) in class_vectors if label in train_classes], key=lambda x: x[0])
@@ -116,16 +157,19 @@ def custom_kernel_init(shape):
     vectors             = vectors.T
     return vectors
 
-def  build_model():
+def  build_model(dataset=''):
     model = Sequential()
-    model.add(Dense(1024, input_shape=(4096,), activation='relu'))
+    model.add(Dense(1024, input_shape=(2048,), activation='relu'))
     model.add(BatchNormalization())
     model.add(Dropout(0.8))
     model.add(Dense(512, activation='relu'))
     model.add(Dropout(0.5))
     model.add(Dense(256, activation='relu'))
     model.add(Dense(NUM_ATTR, activation='relu'))
-    model.add(Dense(NUM_CLASS, activation='softmax', trainable=False, kernel_initializer=custom_kernel_init))
+    if dataset == 'awa':
+        model.add(Dense(NUM_CLASS, activation='softmax', trainable=False, kernel_initializer=awa_kernel_init))
+    else:
+        model.add(Dense(NUM_CLASS, activation='softmax', trainable=False, kernel_initializer=custom_kernel_init))
 
     print("-> model building is completed.")
     return model
@@ -164,7 +208,7 @@ def main():
     # SET HYPERPARAMETERS
 
     global NUM_CLASS, NUM_ATTR, EPOCH, BATCH_SIZE
-    NUM_CLASS = 15
+    NUM_CLASS = 27
     NUM_ATTR = 300
     BATCH_SIZE = 128
     EPOCH = 65
@@ -173,8 +217,8 @@ def main():
     # ---------------------------------------------------------------------------------------------------------------- #
     # TRAINING PHASE
 
-    (x_train, x_valid, x_zsl), (y_train, y_valid, y_zsl) = load_data()
-    model = build_model()
+    (x_train, x_valid, x_zsl), (y_train, y_valid, y_zsl) = load_custom_data(dataset='awa')
+    model = build_model(dataset='awa')
     train_model(model, (x_train, y_train), (x_valid, y_valid))
     print(model.summary())
 

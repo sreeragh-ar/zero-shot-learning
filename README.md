@@ -17,6 +17,13 @@ $**python3**  detect_object.py  ../test.jpg
 * Insert the previously generated word2vec data to the DB
     `cd  src/helpers  `
     `$python3  store_awa_vectors.py`
-(Word2vec data was generated  by running 'src/helpers/extract_awa_vectors.py' code in Google Colab and data downloaded as 'data/vectors_data.json')
+    (Word2vec data was generated  by running 'src/helpers/extract_awa_vectors.py' code in Google Colab and data downloaded as 'data/vectors_data.json')
+* Prepare training and zero shot data for AWA - save as JSON files
+    `cd  src/helpers  `
+    `python3  prepare_train_data.py`
+* Train zeroshot model on AWA
+    `cd  src`
+    `python3  train.py`
+
 
 
