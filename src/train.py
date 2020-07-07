@@ -231,39 +231,6 @@ def main():
     zsl_model   = Model(inp, out)
     print(zsl_model.summary())
     save_keras_model(zsl_model, model_path=MODELPATH)
-
-    # ---------------------------------------------------------------------------------------------------------------- #
-    # ---------------------------------------------------------------------------------------------------------------- #
-    # EVALUATION OF ZERO-SHOT LEARNING PERFORMANCE
-    #(x_train, x_valid, x_zsl), (y_train, y_valid, y_zsl) = load_data()
-    #zsl_model = load_keras_model(model_path=MODELPATH)
-
-    class_vectors       = sorted(np.load(WORD2VECPATH, allow_pickle=True), key=lambda x: x[0])
-    classnames, vectors = zip(*class_vectors)
-    classnames          = list(classnames)
-    vectors             = np.asarray(vectors, dtype=np.float)
-
-    tree        = KDTree(vectors)
-    pred_zsl    = zsl_model.predict(x_zsl)
-
-    top5, top3, top1 = 0, 0, 0
-    for i, pred in enumerate(pred_zsl):
-        pred            = np.expand_dims(pred, axis=0)
-        dist_5, index_5 = tree.query(pred, k=5)
-        pred_labels     = [classnames[index] for index in index_5[0]]
-        true_label      = y_zsl[i]
-        if true_label in pred_labels:
-            top5 += 1
-        if true_label in pred_labels[:3]:
-            top3 += 1
-        if true_label in pred_labels[0]:
-            top1 += 1
-
-    print()
-    print("ZERO SHOT LEARNING SCORE")
-    print("-> Top-5 Accuracy: %.2f" % (top5 / float(len(x_zsl))))
-    print("-> Top-3 Accuracy: %.2f" % (top3 / float(len(x_zsl))))
-    print("-> Top-1 Accuracy: %.2f" % (top1 / float(len(x_zsl))))
     return
 
 if __name__ == '__main__':
