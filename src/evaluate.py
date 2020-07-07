@@ -18,9 +18,10 @@ training_vectors = sorted([(vector_data['label'], vector_data['vector'])
 classnames, vectors = zip(*training_vectors)
 vectors = np.asarray(vectors, dtype=np.float)
 
-zsl_model = load_keras_model(model_path='../model/')
-(x_train, x_valid, x_zsl), (y_train, y_valid,
-                            y_zsl) = load_custom_data(dataset='awa')
+zsl_model = load_keras_model(model_path='../model/backup/')
+
+(x_train, x_valid, x_zsl, x_test), (y_train, y_valid,
+                            y_zsl, y_test) = load_custom_data(dataset='awa')
 
 tree = KDTree(vectors)
 pred_zsl = zsl_model.predict(x_zsl)
@@ -39,7 +40,28 @@ for i, pred in enumerate(pred_zsl):
         top1 += 1
 
 print()
-print("ZERO SHOT LEARNING SCORE")
+print("ZERO SHOT CLASS SCORES")
 print("-> Top-5 Accuracy: %.2f" % (top5 / float(len(x_zsl))))
 print("-> Top-3 Accuracy: %.2f" % (top3 / float(len(x_zsl))))
 print("-> Top-1 Accuracy: %.2f" % (top1 / float(len(x_zsl))))
+
+pred_test = zsl_model.predict(x_test)
+
+top5, top3, top1 = 0, 0, 0
+for i, pred in enumerate(pred_test):
+    pred = np.expand_dims(pred, axis=0)
+    dist_5, index_5 = tree.query(pred, k=5)
+    pred_labels = [classnames[index] for index in index_5[0]]
+    true_label = y_test[i]
+    if true_label in pred_labels:
+        top5 += 1
+    if true_label in pred_labels[:3]:
+        top3 += 1
+    if true_label in pred_labels[0]:
+        top1 += 1
+
+print()
+print("TRAINING CLASS SCORES")
+print("-> Top-5 Accuracy: %.2f" % (top5 / float(len(x_test))))
+print("-> Top-3 Accuracy: %.2f" % (top3 / float(len(x_test))))
+print("-> Top-1 Accuracy: %.2f" % (top1 / float(len(x_test))))

@@ -19,15 +19,10 @@ def prepare_awa_zero_shot_data():
         zsl_classes = [str.strip(line) for line in infile]
     for class_label in zsl_classes:
         class_data = collection.find({'label_name': class_label}, {
-            'feature': 1}).limit(400)
-        count = 0
-        print('Getting', class_label)
+            'feature': 1}).limit(100)
         for data in class_data:
             data_point = (data['feature'], class_label)
-            if count >= 300:
-                break
             zsl_data.append(data_point)
-            count += 1
     with open('../../data/awa_zsl_data.json', 'w') as json_file:
         json.dump(zsl_data, json_file)
 
@@ -42,20 +37,29 @@ def prepare_awa_training_data():
     train_size = 300
     train_data = list()
     valid_data = list()
+    test_data = list()
 
     for class_label in train_classes:
         label_one_hot = to_categorical(
             label_encoder.transform([class_label]), num_classes=27).tolist()
         class_data = collection.find({'label_name': class_label}, {
-            'feature': 1}).limit(400)
+            'feature': 1}).limit(300)
+        n_items = min(300,class_data.count())
+        train_lim = n_items//2
+        valid_lim = int((5/6)*n_items)
+
         count = 0
         for data in class_data:
             data_point = (data['feature'], label_one_hot)
-            if count < 300:
+            if count < train_lim:
                 train_data.append(data_point)
                 count += 1
-            else:
+            elif count < valid_lim:
                 valid_data.append(data_point)
+                count += 1
+            else:
+                data_point = (data['feature'], class_label)
+                test_data.append(data_point)
 
     with open('../../data/awa_train_data.json', 'w') as json_file:
         json.dump(train_data, json_file)
@@ -63,6 +67,11 @@ def prepare_awa_training_data():
 
     with open('../../data/awa_validation_data.json', 'w') as json_file:
         json.dump(valid_data, json_file)
+    valid_data = None
+
+    with open('../../data/awa_test_data.json', 'w') as json_file:
+        json.dump(test_data, json_file)
+
 
 prepare_awa_training_data()
 prepare_awa_zero_shot_data()

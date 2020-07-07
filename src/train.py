@@ -54,6 +54,7 @@ def load_custom_data(dataset='awa'):
     train_data = None
     valid_data = None
     zero_shot_data = None
+    test_data = None
     if dataset == 'awa':
         with open('../data/awa_train_data.json') as json_file:
             train_data = json.load(json_file)
@@ -61,6 +62,8 @@ def load_custom_data(dataset='awa'):
             valid_data = json.load(json_file)
         with open('../data/awa_zsl_data.json') as json_file:
             zero_shot_data = json.load(json_file)
+        with open('../data/awa_test_data.json') as json_file:
+            test_data = json.load(json_file)
 
     np.random.shuffle(train_data)
     np.random.shuffle(valid_data)
@@ -76,8 +79,11 @@ def load_custom_data(dataset='awa'):
     x_zsl, y_zsl = zip(*zero_shot_data)
     x_zsl = normalize(x_zsl, norm='l2')
 
+    x_test, y_test = zip(*test_data)
+    x_test = normalize(x_test, norm='l2')
+
     print("-> data loading is completed.")
-    return (x_train, x_valid, x_zsl), (y_train, y_valid, y_zsl)
+    return (x_train, x_valid, x_zsl, x_test), (y_train, y_valid, y_zsl, y_test)
 
 
 def load_data():
@@ -217,7 +223,7 @@ def main():
     # ---------------------------------------------------------------------------------------------------------------- #
     # TRAINING PHASE
 
-    (x_train, x_valid, x_zsl), (y_train, y_valid, y_zsl) = load_custom_data(dataset='awa')
+    (x_train, x_valid, x_zsl, x_test), (y_train, y_valid, y_zsl, y_test) = load_custom_data(dataset='awa')
     model = build_model(dataset='awa')
     train_model(model, (x_train, y_train), (x_valid, y_valid))
     print(model.summary())
