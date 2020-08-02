@@ -163,7 +163,8 @@ def custom_kernel_init(shape):
     vectors             = vectors.T
     return vectors
 
-def  build_model(dataset=''):
+def  build_model(dataset='', is_fresh_model=True):
+    model = None
     model = Sequential()
     model.add(Dense(1024, input_shape=(2048,), activation='relu'))
     model.add(BatchNormalization())
@@ -172,6 +173,9 @@ def  build_model(dataset=''):
     model.add(Dropout(0.5))
     model.add(Dense(256, activation='relu'))
     model.add(Dense(NUM_ATTR, activation='relu'))
+    if not is_fresh_model:
+        model.load_weights(MODELPATH+"model.h5")
+        print('loaded existing model')
     if dataset == 'awa':
         model.add(Dense(NUM_CLASS, activation='softmax', trainable=False, kernel_initializer=awa_kernel_init))
     else:
@@ -217,14 +221,14 @@ def main():
     NUM_CLASS = 27
     NUM_ATTR = 300
     BATCH_SIZE = 128
-    EPOCH = 65
+    EPOCH = 0
 
     # ---------------------------------------------------------------------------------------------------------------- #
     # ---------------------------------------------------------------------------------------------------------------- #
     # TRAINING PHASE
 
     (x_train, x_valid, x_zsl, x_test), (y_train, y_valid, y_zsl, y_test) = load_custom_data(dataset='awa')
-    model = build_model(dataset='awa')
+    model = build_model(dataset='awa', is_fresh_model=True)
     train_model(model, (x_train, y_train), (x_valid, y_valid))
     print(model.summary())
 
