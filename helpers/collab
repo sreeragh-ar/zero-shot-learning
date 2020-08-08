@@ -1,0 +1,211 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "name": "Copy of google_word2vec.ipynb",
+      "provenance": [],
+      "collapsed_sections": [],
+      "toc_visible": true,
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/sreeragh-ar/zero-shot-learning/blob/customized/helpers/collab\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "7xR0kpEMQynj",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "!pip install gensim"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "nHPe9FLMSY0U",
+        "colab_type": "code",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 122
+        },
+        "outputId": "d3a2852c-6281-4e3c-d158-194c9f7f18a6"
+      },
+      "source": [
+        "from google.colab import drive\n",
+        "drive.mount('/content/drive')"
+      ],
+      "execution_count": 2,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "Go to this URL in a browser: https://accounts.google.com/o/oauth2/auth?client_id=947318989803-6bn6qk8qdgf4n4g3pfee6491hc0brc4i.apps.googleusercontent.com&redirect_uri=urn%3aietf%3awg%3aoauth%3a2.0%3aoob&response_type=code&scope=email%20https%3a%2f%2fwww.googleapis.com%2fauth%2fdocs.test%20https%3a%2f%2fwww.googleapis.com%2fauth%2fdrive%20https%3a%2f%2fwww.googleapis.com%2fauth%2fdrive.photos.readonly%20https%3a%2f%2fwww.googleapis.com%2fauth%2fpeopleapi.readonly\n",
+            "\n",
+            "Enter your authorization code:\n",
+            "··········\n",
+            "Mounted at /content/drive\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "AOajcfHFS1Jd",
+        "colab_type": "code",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 71
+        },
+        "outputId": "0ec9fa04-46bc-4473-81cc-129e48c212ac"
+      },
+      "source": [
+        "import gensim.models.keyedvectors as word2vec\n",
+        "model = word2vec.KeyedVectors.load_word2vec_format('/content/drive/My Drive/Colab Notebooks/GoogleNews-vectors-negative300.bin', binary=True)\n",
+        "# print(len(model['zebra']))\n",
+        "# print(model['zebra'])"
+      ],
+      "execution_count": 3,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "/usr/local/lib/python3.6/dist-packages/smart_open/smart_open_lib.py:254: UserWarning: This function is deprecated, use smart_open.open instead. See the migration notes for details: https://github.com/RaRe-Technologies/smart_open/blob/master/README.rst#migrating-to-the-new-open-function\n",
+            "  'See the migration notes for details: %s' % _MIGRATION_NOTES_URL\n"
+          ],
+          "name": "stderr"
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "PiGkYJm83wfH",
+        "colab_type": "code",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 187
+        },
+        "outputId": "c7400a51-1ff3-4749-aa09-423ff3bd6c36"
+      },
+      "source": [
+        "word2vec_data = []\n",
+        "with open('/content/drive/My Drive/Colab Notebooks/lad_fruit_classes.txt') as classes_cursor:\n",
+        "    for line in classes_cursor:\n",
+        "        label = line.strip()\n",
+        "        label_obj = {'label': label}\n",
+        "        label_key = label.replace('+', '_').capitalize()\n",
+        "        label_obj['vector_key'] = label_key\n",
+        "        try:\n",
+        "          label_obj['vector'] = model[label_key].tolist()\n",
+        "          word2vec_data.append(label_obj)\n",
+        "        except:\n",
+        "          print('Breaking', label, label_key)\n",
+        "print(len(word2vec_data))"
+      ],
+      "execution_count": 6,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "Breaking mandarin_orange Mandarin_orange\n",
+            "Breaking siraitia_grosvenorii Siraitia_grosvenorii\n",
+            "Breaking eleocharis_dulcis Eleocharis_dulcis\n",
+            "Breaking mulberry_fruit Mulberry_fruit\n",
+            "Breaking ginkgo_nut Ginkgo_nut\n",
+            "Breaking hami_melon Hami_melon\n",
+            "Breaking red_bayberry Red_bayberry\n",
+            "Breaking muskmelon Muskmelon\n",
+            "Breaking wax_apple Wax_apple\n",
+            "41\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "STfbJ0MWHKWD",
+        "colab_type": "code",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 34
+        },
+        "outputId": "0b834e04-7c58-44f0-da54-473d52852071"
+      },
+      "source": [
+        "label_obj = {'label': 'mandarin_orange'}\n",
+        "label_obj['vector_key'] = 'mandarin_orange'\n",
+        "label_obj['vector'] =  model[label_obj['vector_key']].tolist()\n",
+        "word2vec_data.append(label_obj)\n",
+        "\n",
+        "label_obj = {'label': 'mulberry_fruit'}\n",
+        "label_obj['vector_key'] = 'Mulberry'\n",
+        "label_obj['vector'] =  model[label_obj['vector_key']].tolist()\n",
+        "word2vec_data.append(label_obj)\n",
+        "\n",
+        "label_obj = {'label': 'ginkgo_nut'}\n",
+        "label_obj['vector_key'] = 'ginkgo_nuts'\n",
+        "label_obj['vector'] =  model[label_obj['vector_key']].tolist()\n",
+        "word2vec_data.append(label_obj)\n",
+        "\n",
+        "label_obj = {'label': 'red_bayberry'}\n",
+        "label_obj['vector_key'] = 'Yumberry'\n",
+        "label_obj['vector'] =  model[label_obj['vector_key']].tolist()\n",
+        "word2vec_data.append(label_obj)\n",
+        "\n",
+        "label_obj = {'label': 'muskmelon'}\n",
+        "label_obj['vector_key'] = 'muskmelon'\n",
+        "label_obj['vector'] =  model[label_obj['vector_key']].tolist()\n",
+        "word2vec_data.append(label_obj)\n",
+        "print(len(word2vec_data))"
+      ],
+      "execution_count": 7,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "46\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "hx6Td2bzS6l7",
+        "colab_type": "code",
+        "colab": {}
+      },
+      "source": [
+        "import json\n",
+        "with open('/content/drive/My Drive/Colab Notebooks/lad_vectors_data.json', 'w') as json_file:\n",
+        "  json.dump(word2vec_data, json_file)"
+      ],
+      "execution_count": 8,
+      "outputs": []
+    }
+  ]
+}
