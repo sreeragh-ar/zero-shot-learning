@@ -1,0 +1,10 @@
+mulberry_fruit
+walnut
+apricot
+mandarin_orange
+loquat
+peach
+muskmelon
+banana
+watermelon
+pomelo

@@ -9,4 +9,3 @@ model/backup2/
 model/backup_models/
 src/helpers/extract_resnet_feature.py
 src/hippo.jpeg
-src/splits/

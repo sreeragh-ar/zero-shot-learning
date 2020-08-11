@@ -12,7 +12,7 @@ client = MongoClient()
 db = client['zsl_database']
 collection = db['awa']
 
-DATA_SPLITS_DIR = os.path.join('..', 'splits')
+DATASET_SPLITS_DIR = os.path.join('..', 'dataset_splits')
 DATA_DUMP_DIR = os.path.join('..', '..', 'data')
 
 
@@ -20,7 +20,7 @@ def prepare_zero_shot_data(dataset='awa'):
     zsl_classes = None
     zsl_data = list()
     file_name = 'zsl_classes.txt'
-    classes_file_path = os.path.join(DATA_SPLITS_DIR, dataset, file_name)
+    classes_file_path = os.path.join(DATASET_SPLITS_DIR, dataset, file_name)
     with open(classes_file_path, 'r') as zsl_classes:
         for line in zsl_classes:
             class_label = str.strip(line)
@@ -38,7 +38,7 @@ def prepare_zero_shot_data(dataset='awa'):
 def prepare_training_data(dataset='awa'):
     train_classes = None
     file_name = 'train_classes.txt'
-    classes_file_path = os.path.join(DATA_SPLITS_DIR, dataset, file_name)
+    classes_file_path = os.path.join(DATASET_SPLITS_DIR, dataset, file_name)
     with open(classes_file_path, 'r') as infile:
         train_classes = [str.strip(line) for line in infile]
     label_encoder = LabelEncoder()
