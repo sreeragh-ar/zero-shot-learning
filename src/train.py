@@ -11,6 +11,7 @@ import gzip
 import _pickle as cPickle
 import os
 import json
+import argparse
 from collections import Counter
 
 from sklearn.preprocessing import LabelEncoder, normalize
@@ -26,6 +27,7 @@ from keras.utils import to_categorical
 WORD2VECPATH    = "../data/class_vectors.npy"
 DATAPATH        = "../data/zeroshot_data.pkl"
 MODELPATH       = "../model/"
+DATA_DIR = os.path.join('..','data')
 
 def load_keras_model(model_path):
     with open(model_path +"model.json", 'r') as json_file:
@@ -50,20 +52,20 @@ def save_keras_model(model, model_path):
     print("-> zsl model is saved.")
     return
 
-def load_custom_data(dataset='awa'):
+
+def load_custom_data(dataset):
     train_data = None
     valid_data = None
     zero_shot_data = None
     test_data = None
-    if dataset == 'awa':
-        with open('../data/awa_train_data.json') as json_file:
-            train_data = json.load(json_file)
-        with open('../data/awa_validation_data.json') as json_file:
-            valid_data = json.load(json_file)
-        with open('../data/awa_zsl_data.json') as json_file:
-            zero_shot_data = json.load(json_file)
-        with open('../data/awa_test_data.json') as json_file:
-            test_data = json.load(json_file)
+    with open(os.path.join(DATA_DIR, f'{dataset}_train_data.json')) as json_file:
+        train_data = json.load(json_file)
+    with open(os.path.join(DATA_DIR, f'{dataset}_validation_data.json')) as json_file:
+        valid_data = json.load(json_file)
+    with open(os.path.join(DATA_DIR, f'{dataset}_zsl_data.json')) as json_file:
+        zero_shot_data = json.load(json_file)
+    with open(os.path.join(DATA_DIR, f'{dataset}_test_data.json')) as json_file:
+        test_data = json.load(json_file)
 
     np.random.shuffle(train_data)
     np.random.shuffle(valid_data)
@@ -145,14 +147,21 @@ def load_data():
     return (x_train, x_valid, x_zsl), (y_train, y_valid, y_zsl)
 
 
-def awa_kernel_init(shape):
+def dataset_specific_kernel_init(shape):
     class_vectors = None
-    with open('../data/vectors_data.json') as json_file:
-            class_vectors = json.load(json_file)
-    training_vectors    = sorted([(vector_data['label'], vector_data['vector']) for vector_data in class_vectors if vector_data['label'] in train_classes], key=lambda x: x[0])
+    vectors_file = None
+
+    if args.dataset == 'awa':
+        vectors_file = os.path.join(DATA_DIR, 'vectors_data.json')
+    elif args.dataset == 'lad':
+        vectors_file = os.path.join(DATA_DIR, 'lad_vectors_data.json')
+    with open(vectors_file) as json_file:
+        class_vectors = json.load(json_file)
+    training_vectors = sorted([(vector_data['label'], vector_data['vector'])
+                               for vector_data in class_vectors if vector_data['label'] in train_classes], key=lambda x: x[0])
     classnames, vectors = zip(*training_vectors)
-    vectors             = np.asarray(vectors, dtype=np.float)
-    vectors             = vectors.T
+    vectors = np.asarray(vectors, dtype=np.float)
+    vectors = vectors.T
     return vectors
 
 def custom_kernel_init(shape):
@@ -176,8 +185,8 @@ def  build_model(dataset='', is_fresh_model=True):
     if not is_fresh_model:
         model.load_weights(MODELPATH+"model.h5")
         print('loaded existing model')
-    if dataset == 'awa':
-        model.add(Dense(NUM_CLASS, activation='softmax', trainable=False, kernel_initializer=awa_kernel_init))
+    if dataset != '':
+        model.add(Dense(NUM_CLASS, activation='softmax', trainable=False, kernel_initializer=dataset_specific_kernel_init))
     else:
         model.add(Dense(NUM_CLASS, activation='softmax', trainable=False, kernel_initializer=custom_kernel_init))
 
@@ -203,14 +212,30 @@ def train_model(model, train_data, valid_data):
     print("model training is completed.")
     return history
 
-def main():
 
+def get_arguments():
+    parser = argparse.ArgumentParser(description='Data details')
+    parser.add_argument("--dataset", default='awa',
+                        help="The dataset to be used for training")
+    parser.add_argument("--is-fresh-model", type=bool, default=False,
+                        help="Start training a fresh model or resume training the existing model")
+    return parser.parse_args()
+
+
+def main():
+    global args
+    args = get_arguments()
+    print(args)
     global train_classes
-    with open('train_classes.txt', 'r') as infile:
+    DATASET_SPLITS_DIR = os.path.join('dataset_splits', args.dataset)
+    train_classes_file = os.path.join(DATASET_SPLITS_DIR, 'train_classes.txt')
+    zsl_classes_file = os.path.join(DATASET_SPLITS_DIR, 'zsl_classes.txt')
+
+    with open(train_classes_file, 'r') as infile:
         train_classes = [str.strip(line) for line in infile]
 
     global zsl_classes
-    with open('zsl_classes.txt', 'r') as infile:
+    with open(zsl_classes_file, 'r') as infile:
         zsl_classes = [str.strip(line) for line in infile]
 
     # ---------------------------------------------------------------------------------------------------------------- #
@@ -218,17 +243,18 @@ def main():
     # SET HYPERPARAMETERS
 
     global NUM_CLASS, NUM_ATTR, EPOCH, BATCH_SIZE
-    NUM_CLASS = 27
+    NUM_CLASS = len(train_classes)
     NUM_ATTR = 300
     BATCH_SIZE = 128
-    EPOCH = 0
+    EPOCH = 5000
 
     # ---------------------------------------------------------------------------------------------------------------- #
     # ---------------------------------------------------------------------------------------------------------------- #
     # TRAINING PHASE
 
-    (x_train, x_valid, x_zsl, x_test), (y_train, y_valid, y_zsl, y_test) = load_custom_data(dataset='awa')
-    model = build_model(dataset='awa', is_fresh_model=True)
+    (x_train, x_valid, x_zsl, x_test), (y_train, y_valid, y_zsl, y_test) = load_custom_data(args.dataset)
+
+    model = build_model(args.dataset, args.is_fresh_model)
     train_model(model, (x_train, y_train), (x_valid, y_valid))
     print(model.summary())
 
@@ -242,6 +268,7 @@ def main():
     print(zsl_model.summary())
     save_keras_model(zsl_model, model_path=MODELPATH)
     return
+
 
 if __name__ == '__main__':
     main()
