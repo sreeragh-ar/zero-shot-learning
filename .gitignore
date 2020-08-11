@@ -1,5 +1,12 @@
 .DS_Store
 .idea
 __pycache__
-data/awa_*_data.json
-
+data/*_*_data.json
+.vscode/
+data/lad_fruit_classes.txt
+model/backup/
+model/backup2/
+model/backup_models/
+src/helpers/extract_resnet_feature.py
+src/hippo.jpeg
+src/splits/
