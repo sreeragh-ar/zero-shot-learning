@@ -1,31 +1,47 @@
 from train import load_custom_data, load_keras_model
 import json
 import numpy as np
+import argparse
+import os
 from sklearn.neighbors import KDTree
 
 def get_harmonic_mean(a, b):
     return (2 * (a * b)/(a + b))
 
+def get_arguments():
+    parser = argparse.ArgumentParser(description='Data details')
+    parser.add_argument("--dataset", default='awa',
+                        help="The dataset to be used for training")
+    return parser.parse_args()
+
+args = get_arguments()
+DATASET_SPLITS_DIR = os.path.join('dataset_splits', args.dataset)
+DATA_DIR = os.path.join('..', 'data')
 
 train_classes = None
 zsl_classes = None
-with open('train_classes.txt', 'r') as infile:
+
+with open(os.path.join(DATASET_SPLITS_DIR,'train_classes.txt'), 'r') as infile:
     train_classes = [str.strip(line) for line in infile]
-with open('zsl_classes.txt', 'r') as infile:
+with open(os.path.join(DATASET_SPLITS_DIR,'zsl_classes.txt'), 'r') as infile:
     zsl_classes = [str.strip(line) for line in infile]
 classes_considered = train_classes + zsl_classes
 class_vectors = None
-with open('../data/vectors_data.json') as json_file:
+file_name = 'vectors_data.json'
+if args.dataset != 'awa':
+    file_name = f'{args.dataset}_{file_name}'
+vectors_file_path = os.path.join(DATA_DIR, file_name)
+with open(vectors_file_path) as json_file:
     class_vectors = json.load(json_file)
 training_vectors = sorted([(vector_data['label'], vector_data['vector'])
                            for vector_data in class_vectors if vector_data['label'] in classes_considered], key=lambda x: x[0])
 classnames, vectors = zip(*training_vectors)
 vectors = np.asarray(vectors, dtype=np.float)
 
-zsl_model = load_keras_model(model_path='../model/')
+zsl_model = load_keras_model(model_path='../model/backup_models/lad_6000/')
 
 (x_train, x_valid, x_zsl, x_test), (y_train, y_valid,
-                            y_zsl, y_test) = load_custom_data(dataset='awa')
+                            y_zsl, y_test) = load_custom_data(args.dataset)
 
 tree = KDTree(vectors)
 pred_zsl = zsl_model.predict(x_zsl)
